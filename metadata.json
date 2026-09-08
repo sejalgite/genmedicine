@@ -1,0 +1,6 @@
+{
+  "name": "genmedicine",
+  "description": "Enterprise multi-tenant medicine comparison, B2B pharmaceutical governance, partner pharmacy dispatch, and consumer generic drug discovery platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
