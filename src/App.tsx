@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppScreen, MedicineOffer, FormulationDossier, DispenseOrder, TenantUser, DispensaryOutlet, AuditEvent, RankingWeights } from './types';
+import { AppScreen, MedicineOffer, FormulationDossier, DispenseOrder, TenantUser, DispensaryOutlet, AuditEvent, RankingWeights, UserAccount } from './types';
 import {
   initialMedicineOffers,
   initialFormulationDossiers,
@@ -16,9 +16,25 @@ import { TenantAdminPortal } from './components/TenantAdminPortal';
 import { PharmacyPartnerPortal } from './components/PharmacyPartnerPortal';
 import { CustomerMobileApp } from './components/CustomerMobileApp';
 import { ArchitectureVisualizer } from './components/ArchitectureVisualizer';
+import { AuthScreen } from './components/AuthScreen';
+
+const DEFAULT_USER: UserAccount = {
+  id: 'usr-customer-01',
+  email: 'alex.morgan@healthmail.com',
+  name: 'Alex Morgan',
+  role: 'customer',
+  phone: '+1 (555) 234-5678',
+  address: '452 Broadway, Apt 4B, New York, NY 10013',
+  insuranceProvider: 'BlueCross Anthem Select',
+  memberId: 'BC-99420-ALEX',
+  hsaFsaBalance: 840.5,
+  isVerified: true,
+};
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('super-admin');
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(DEFAULT_USER);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Shared platform state
   const [rankingWeights, setRankingWeights] = useState<RankingWeights>(initialRankingWeights);
@@ -96,6 +112,29 @@ export default function App() {
     );
   };
 
+  const handleLoginSuccess = (account: UserAccount) => {
+    setCurrentUser(account);
+    setShowAuthModal(false);
+
+    // Auto navigate to role workspace
+    if (account.role === 'customer') setCurrentScreen('customer-mobile');
+    else if (account.role === 'pharmacy_partner') setCurrentScreen('pharmacy-partner');
+    else if (account.role === 'pharma_b2b') setCurrentScreen('b2b-pharma');
+    else if (account.role === 'tenant_admin') setCurrentScreen('tenant-admin');
+    else if (account.role === 'super_admin') setCurrentScreen('super-admin');
+
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    const newEvent: AuditEvent = {
+      id: `aud-${Date.now()}`,
+      time: timeStr,
+      type: 'RBAC_AUDIT',
+      tenant: account.organization || 'global_auth',
+      description: `User ${account.name} (${account.role}) authenticated via Auth Gateway. Session token granted.`,
+    };
+    setAuditEvents((prev) => [newEvent, ...prev]);
+  };
+
   const dispatchedCount = dispenseOrders.filter((o) => o.status === 'Dispatched').length;
 
   return (
@@ -105,6 +144,8 @@ export default function App() {
         currentScreen={currentScreen}
         onScreenChange={setCurrentScreen}
         dispatchedCount={dispatchedCount}
+        currentUser={currentUser}
+        onOpenAuth={() => setShowAuthModal(true)}
       />
 
       {/* Screen Views */}
@@ -144,13 +185,27 @@ export default function App() {
 
         {currentScreen === 'customer-mobile' && (
           <CustomerMobileApp
+            currentUser={currentUser}
             onOrderPlaced={handleOrderPlacedFromCustomer}
             onNavigateToPharmacy={() => setCurrentScreen('pharmacy-partner')}
+            onOpenAuth={() => setShowAuthModal(true)}
           />
         )}
 
         {currentScreen === 'architecture' && <ArchitectureVisualizer />}
       </main>
+
+      {/* Login & Registration Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-4xl my-8">
+            <AuthScreen
+              onLoginSuccess={handleLoginSuccess}
+              onClose={() => setShowAuthModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

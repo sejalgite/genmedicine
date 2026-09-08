@@ -42,6 +42,7 @@ export const TenantAdminPortal: React.FC<TenantAdminPortalProps> = ({
   const [showOutletModal, setShowOutletModal] = useState(false);
   const [searchMember, setSearchMember] = useState('');
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'users' | 'outlets' | 'security' | 'api'>('users');
 
   const apiKey = 'sk_live_apollo_9942_89f0a21d9b32e180';
 
@@ -212,19 +213,83 @@ export const TenantAdminPortal: React.FC<TenantAdminPortalProps> = ({
           </div>
         )}
 
-        {/* 2-Column Split: Main Team & Outlets vs Tenant Security & Webhooks */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          {/* Left 8 Cols: Organization Users & RBAC Permissions */}
-          <div className="xl:col-span-8 space-y-6">
-            {/* Team Members Section */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Organization Users &amp; RBAC Permissions</h2>
-                  <p className="text-xs text-slate-500">
-                    Granular role definitions with MFA enforcement and physical store scope confinement.
-                  </p>
-                </div>
+        {/* Navigation Tabs Bar for Decluttered Experience */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+              activeTab === 'users'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Organization Users &amp; RBAC</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              activeTab === 'users' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600'
+            }`}>
+              {users.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('outlets')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+              activeTab === 'outlets'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            <span>Physical Dispensaries</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              activeTab === 'outlets' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600'
+            }`}>
+              {outlets.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+              activeTab === 'security'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Isolation &amp; Compliance</span>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              activeTab === 'security' ? 'bg-indigo-700 text-white' : 'bg-emerald-50 text-emerald-700'
+            }`}>
+              100% Pass
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('api')}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer whitespace-nowrap ${
+              activeTab === 'api'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Key className="w-4 h-4" />
+            <span>API Keys &amp; Webhooks</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Organization Users & RBAC */}
+        {activeTab === 'users' && (
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Organization Users &amp; RBAC Permissions</h2>
+                <p className="text-xs text-slate-500">
+                  Granular role definitions with MFA enforcement and physical store scope confinement.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="relative w-64">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
                   <input
@@ -235,239 +300,261 @@ export const TenantAdminPortal: React.FC<TenantAdminPortalProps> = ({
                     className="w-full text-xs pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-semibold tracking-wider">
-                      <th className="py-3 px-4">Member Name &amp; Email</th>
-                      <th className="py-3 px-4">Role &amp; Privilege</th>
-                      <th className="py-3 px-4">Store / Scope Confinement</th>
-                      <th className="py-3 px-4">MFA Security</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-slate-50/70 transition">
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200">
-                              {user.initials}
-                            </div>
-                            <div>
-                              <div className="font-bold text-slate-900">{user.name}</div>
-                              <div className="text-slate-500 font-mono text-[11px]">{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
-                              user.role.includes('Dispenser')
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : user.role.includes('Inventory')
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                                : user.role.includes('Compliance')
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
-                            }`}
-                          >
-                            {user.role}
-                          </span>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <div className="font-medium text-slate-800">{user.scope}</div>
-                          <div className="text-slate-400 text-[11px]">{user.location}</div>
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                user.mfaType === 'sms-degraded' ? 'bg-amber-400' : 'bg-emerald-500'
-                              }`}
-                            ></span>
-                            <span className="font-medium text-slate-700">{user.mfaMethod}</span>
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Active {user.lastActive}</div>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-right">
-                          <button
-                            onClick={() => alert(`Configuring granular permissions for ${user.name}...`)}
-                            className="px-2.5 py-1 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded font-medium cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Managed Physical Dispensaries & Outlets */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Managed Physical Dispensaries &amp; Outlets</h2>
-                  <p className="text-xs text-slate-500">
-                    Retail stores bound to tenant schema partition with real-time stock sync.
-                  </p>
-                </div>
                 <button
-                  onClick={() => setShowOutletModal(true)}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                  onClick={() => setShowInviteModal(true)}
+                  className="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Add Outlet
+                  Invite
                 </button>
               </div>
+            </div>
 
-              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                {outlets.map((outlet) => (
-                  <div key={outlet.id} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
-                        {outlet.outletCode}
-                      </span>
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        {outlet.status}
-                      </span>
-                    </div>
-                    <div className="font-bold text-sm text-slate-900 mt-2">{outlet.name}</div>
-                    <p className="text-xs text-slate-500 mt-1">{outlet.address}</p>
-                    <div className="mt-3 pt-2 border-t border-slate-200 flex justify-between text-xs text-slate-500 font-mono">
-                      <span>DEA: {outlet.dea}</span>
-                      <span className="text-indigo-600 font-bold">{outlet.skuCount} SKUs</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-semibold tracking-wider">
+                    <th className="py-3 px-4">Member Name &amp; Email</th>
+                    <th className="py-3 px-4">Role &amp; Privilege</th>
+                    <th className="py-3 px-4">Store / Scope Confinement</th>
+                    <th className="py-3 px-4">MFA Security</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center border border-slate-200">
+                            {user.initials}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900">{user.name}</div>
+                            <div className="text-slate-500 font-mono text-[11px]">{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                            user.role.includes('Dispenser')
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : user.role.includes('Inventory')
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : user.role.includes('Compliance')
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {user.role}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="font-medium text-slate-800">{user.scope}</div>
+                        <div className="text-slate-400 text-[11px]">{user.location}</div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              user.mfaType === 'sms-degraded' ? 'bg-amber-400' : 'bg-emerald-500'
+                            }`}
+                          ></span>
+                          <span className="font-medium text-slate-700">{user.mfaMethod}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">Active {user.lastActive}</div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => alert(`Configuring granular permissions for ${user.name}...`)}
+                          className="px-2.5 py-1 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded font-medium cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
+        )}
 
-          {/* Right 4 Cols: Tenant Security Health, API Tokens & Webhooks */}
-          <div className="xl:col-span-4 space-y-6">
+        {/* Tab 2: Physical Dispensaries */}
+        {activeTab === 'outlets' && (
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">Managed Physical Dispensaries &amp; Outlets</h2>
+                <p className="text-xs text-slate-500">
+                  Retail stores bound to tenant schema partition with real-time stock sync.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowOutletModal(true)}
+                className="h-8 px-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Outlet
+              </button>
+            </div>
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {outlets.map((outlet) => (
+                <div key={outlet.id} className="p-4 rounded-xl border border-slate-200 bg-white hover:shadow-xs transition">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                      {outlet.outletCode}
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {outlet.status}
+                    </span>
+                  </div>
+                  <div className="font-bold text-base text-slate-900 mt-2.5">{outlet.name}</div>
+                  <p className="text-xs text-slate-500 mt-1">{outlet.address}</p>
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500 font-mono">
+                    <span>DEA: {outlet.dea}</span>
+                    <span className="text-indigo-600 font-bold">{outlet.skuCount} Active SKUs</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Security & Compliance */}
+        {activeTab === 'security' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tenant Isolation Health Widget */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
                   Tenant Isolation Health
                 </h3>
-                <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded">
                   PASS (100%)
                 </span>
               </div>
 
-              <div className="mt-3 space-y-2.5 text-xs">
-                <div className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
-                  <span className="text-slate-600">PostgreSQL Schema Sandboxing:</span>
+              <div className="mt-4 space-y-3 text-xs">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-slate-600 font-medium">PostgreSQL Schema Sandboxing:</span>
                   <span className="font-bold text-emerald-700">Strict (schema_apollo_chain)</span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
-                  <span className="text-slate-600">Row-Level Security (RLS):</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-slate-600 font-medium">Row-Level Security (RLS):</span>
                   <span className="font-bold text-emerald-700">Enforced on all tables</span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
-                  <span className="text-slate-600">BYOK KMS Encryption:</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-slate-600 font-medium">BYOK KMS Encryption:</span>
                   <span className="font-mono text-indigo-700 font-semibold">AWS KMS / HSM-140-2</span>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
-                  <span className="text-slate-600">Audit Trail Cryptography:</span>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-slate-600 font-medium">Audit Trail Cryptography:</span>
                   <span className="font-mono text-slate-700">SHA-256 Merkle Chained</span>
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+              <div className="mt-5 pt-3 border-t border-slate-100 text-xs text-slate-500">
                 Quarterly third-party SOC-2 Type II attestation report available for download under Organization Compliance.
-              </div>
-            </div>
-
-            {/* API Tokens & Production Webhooks */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                  <Key className="w-4 h-4 text-indigo-600" />
-                  API Tokens &amp; Webhooks
-                </h3>
-                <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                  v1.2 REST &amp; Kafka
-                </span>
-              </div>
-
-              {/* API Token Box */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Active Production Sync Key:
-                </label>
-                <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2 font-mono text-xs text-slate-700">
-                  <span className="truncate flex-1">
-                    {showKey ? apiKey : '••••••••••••••••••••••••••••••••'}
-                  </span>
-                  <button
-                    onClick={() => setShowKey(!showKey)}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-sans cursor-pointer"
-                  >
-                    {showKey ? 'Hide' : 'Reveal'}
-                  </button>
-                  <button
-                    onClick={handleCopyKey}
-                    className="p-1 text-slate-500 hover:text-slate-800 cursor-pointer"
-                    title="Copy API Key"
-                  >
-                    {copiedKey ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Used by Apollo Downtown #104 and regional depots for ERP inventory feeds.
-                </p>
-              </div>
-
-              {/* Webhook Ping Simulator */}
-              <div className="pt-3 border-t border-slate-100">
-                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Dispense Order Dispatch Webhook:
-                </label>
-                <div className="text-xs font-mono text-slate-500 bg-slate-50 p-2 rounded border border-slate-200 truncate">
-                  https://api.apollohealth.internal/v1/orders/webhook
-                </div>
-                <div className="mt-2 flex justify-between items-center">
-                  <span className="text-[11px] text-slate-400">Events: order.dispensed, stock.low</span>
-                  <button
-                    onClick={handlePingWebhook}
-                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-medium cursor-pointer"
-                  >
-                    Test Ping
-                  </button>
-                </div>
               </div>
             </div>
 
             {/* Tenant Security Feed */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-              <h3 className="font-bold text-sm text-slate-900 mb-3">Tenant Audit Log</h3>
-              <div className="space-y-2 text-xs font-mono text-slate-600">
-                <div className="p-2 rounded bg-slate-50 border border-slate-100">
+              <h3 className="font-bold text-base text-slate-900 mb-3 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-indigo-600" />
+                Tenant Cryptographic Audit Log
+              </h3>
+              <div className="space-y-3 text-xs font-mono text-slate-600">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-indigo-600 font-semibold">[14:02]</span> Order #GEN-ORD-88219 routed to Outlet #104.
                 </div>
-                <div className="p-2 rounded bg-slate-50 border border-slate-100">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-emerald-600 font-semibold">[13:45]</span> Inventory batch sync finished (1,240 items).
                 </div>
-                <div className="p-2 rounded bg-slate-50 border border-slate-100">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-slate-400">[11:20]</span> User Dr. Michael Chen authenticated via FIDO2 passkey.
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="text-cyan-600 font-semibold">[09:15]</span> Scheduled differential backup completed to cold storage.
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Tab 4: API Keys & Webhooks */}
+        {activeTab === 'api' && (
+          <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <Key className="w-5 h-5 text-indigo-600" />
+                  API Tokens &amp; Webhooks
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Manage machine-to-machine integrations and event webhooks.</p>
+              </div>
+              <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2.5 py-1 rounded">
+                v1.2 REST &amp; Kafka
+              </span>
+            </div>
+
+            {/* API Token Box */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Active Production Sync Key:
+              </label>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3 font-mono text-xs text-slate-700">
+                <span className="truncate flex-1">
+                  {showKey ? apiKey : '••••••••••••••••••••••••••••••••'}
+                </span>
+                <button
+                  onClick={() => setShowKey(!showKey)}
+                  className="px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800 font-sans font-semibold cursor-pointer"
+                >
+                  {showKey ? 'Hide' : 'Reveal'}
+                </button>
+                <button
+                  onClick={handleCopyKey}
+                  className="p-1.5 text-slate-500 hover:text-slate-800 cursor-pointer"
+                  title="Copy API Key"
+                >
+                  {copiedKey ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 mt-1.5">
+                Used by Apollo Downtown #104 and regional depots for ERP inventory feeds.
+              </p>
+            </div>
+
+            {/* Webhook Ping Simulator */}
+            <div className="pt-4 border-t border-slate-100">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Dispense Order Dispatch Webhook:
+              </label>
+              <div className="text-xs font-mono text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 truncate">
+                https://api.apollohealth.internal/v1/orders/webhook
+              </div>
+              <div className="mt-3 flex justify-between items-center">
+                <span className="text-xs text-slate-500">Events: order.dispensed, stock.low</span>
+                <button
+                  onClick={handlePingWebhook}
+                  className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold cursor-pointer"
+                >
+                  Test Ping Webhook
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Invite Member Modal */}

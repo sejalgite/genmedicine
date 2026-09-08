@@ -6,7 +6,22 @@ export type AppScreen =
   | 'customer-mobile'
   | 'architecture';
 
-export type MobileSubScreen = 'discover' | 'scan' | 'checkout';
+export type MobileSubScreen = 'discover' | 'scan' | 'checkout' | 'profile';
+
+export interface UserAccount {
+  id: string;
+  name: string;
+  email: string;
+  role: 'customer' | 'pharmacy_partner' | 'pharma_b2b' | 'tenant_admin' | 'super_admin';
+  organization?: string;
+  avatarUrl?: string;
+  phone?: string;
+  address?: string;
+  insuranceProvider?: string;
+  memberId?: string;
+  hsaFsaBalance?: number;
+  isVerified?: boolean;
+}
 
 export interface MedicineOffer {
   id: string;

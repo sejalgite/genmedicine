@@ -8,19 +8,25 @@ import {
   Activity,
   Layers,
   Sparkles,
+  User,
+  LogIn,
 } from 'lucide-react';
-import { AppScreen } from '../types';
+import { AppScreen, UserAccount } from '../types';
 
 interface NavigationBannerProps {
   currentScreen: AppScreen;
   onScreenChange: (screen: AppScreen) => void;
   dispatchedCount: number;
+  currentUser: UserAccount | null;
+  onOpenAuth: () => void;
 }
 
 export const NavigationBanner: React.FC<NavigationBannerProps> = ({
   currentScreen,
   onScreenChange,
   dispatchedCount,
+  currentUser,
+  onOpenAuth,
 }) => {
   const screens = [
     {
@@ -122,9 +128,44 @@ export const NavigationBanner: React.FC<NavigationBannerProps> = ({
         })}
       </div>
 
-      <div className="hidden 2xl:flex items-center gap-2 text-[11px] text-slate-400">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-        <span>PostgreSQL Schemas Active (24/24)</span>
+      {/* User Session & Auth Action */}
+      <div className="flex items-center gap-2">
+        {currentUser ? (
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-1">
+            <div className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 flex items-center justify-center font-bold text-[10px] font-mono">
+              {currentUser.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()}
+            </div>
+            <div className="hidden lg:flex flex-col text-left leading-none">
+              <span className="text-[11px] font-semibold text-slate-200">{currentUser.name}</span>
+              <span className="text-[9px] text-cyan-400 font-mono capitalize">{currentUser.role}</span>
+            </div>
+            <button
+              onClick={onOpenAuth}
+              title="Switch Account / Login"
+              className="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-slate-800 transition cursor-pointer"
+            >
+              Switch
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={onOpenAuth}
+            className="flex items-center gap-1.5 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs rounded-md shadow-xs transition cursor-pointer"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In / Register</span>
+          </button>
+        )}
+
+        <div className="hidden 2xl:flex items-center gap-2 text-[11px] text-slate-400 border-l border-slate-800 pl-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>RLS Active</span>
+        </div>
       </div>
     </nav>
   );

@@ -23,16 +23,20 @@ import {
   Sliders,
   Lock,
 } from 'lucide-react';
-import { MobileSubScreen } from '../types';
+import { MobileSubScreen, UserAccount } from '../types';
 
 interface CustomerMobileAppProps {
+  currentUser?: UserAccount | null;
   onOrderPlaced: (orderData: any) => void;
   onNavigateToPharmacy: () => void;
+  onOpenAuth?: () => void;
 }
 
 export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
+  currentUser,
   onOrderPlaced,
   onNavigateToPharmacy,
+  onOpenAuth,
 }) => {
   const [currentStep, setCurrentStep] = useState<MobileSubScreen>('discover');
   const [searchQuery, setSearchQuery] = useState('Atorvastatin 20mg');
@@ -42,6 +46,9 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<'express' | 'scheduled' | 'pickup'>('express');
   const [countdownSeconds, setCountdownSeconds] = useState(899); // 14:59
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [profileToast, setProfileToast] = useState<string | null>(null);
+  const [autoRefillAtorvastatin, setAutoRefillAtorvastatin] = useState(true);
+  const [autoRefillMetformin, setAutoRefillMetformin] = useState(false);
 
   // Timer countdown
   useEffect(() => {
@@ -122,6 +129,14 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
               }`}
             >
               3. Dispatch
+            </button>
+            <button
+              onClick={() => setCurrentStep('profile')}
+              className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition cursor-pointer ${
+                currentStep === 'profile' ? 'bg-cyan-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              4. Profile
             </button>
           </div>
         </div>
@@ -577,6 +592,265 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
           </div>
         )}
 
+        {/* SUB-SCREEN 4: CUSTOMER HEALTH PROFILE & MEDICINE CABINET */}
+        {currentStep === 'profile' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+            {/* Profile Toast Banner */}
+            {profileToast && (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-[11px] font-medium flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-none" />
+                  <span>{profileToast}</span>
+                </div>
+                <button onClick={() => setProfileToast(null)} className="text-emerald-700 font-bold ml-2">
+                  ×
+                </button>
+              </div>
+            )}
+
+            {/* Profile Overview Header Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white space-y-3 shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-cyan-500/20 border-2 border-cyan-400 flex items-center justify-center text-cyan-300 font-bold text-base font-mono">
+                    {currentUser?.name
+                      ? currentUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+                      : 'AM'}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-bold text-sm text-white">
+                        {currentUser?.name || 'Alex Morgan'}
+                      </h3>
+                      <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 text-[9px] font-bold uppercase">
+                        Verified Patient
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      {currentUser?.email || 'alex.morgan@healthmail.com'}
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      {currentUser?.phone || '+1 (555) 234-5678'} • SoHo, NY
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stat Metrics */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/60 text-center">
+                <div className="p-2 bg-slate-800/80 rounded-xl border border-slate-700/50">
+                  <span className="text-[10px] text-slate-400 block">Total Generic Savings</span>
+                  <span className="text-xs font-bold text-emerald-400 font-mono mt-0.5 block">$412.80</span>
+                </div>
+                <div className="p-2 bg-slate-800/80 rounded-xl border border-slate-700/50">
+                  <span className="text-[10px] text-slate-400 block">Active Prescriptions</span>
+                  <span className="text-xs font-bold text-cyan-400 font-mono mt-0.5 block">3 Rx</span>
+                </div>
+                <div className="p-2 bg-slate-800/80 rounded-xl border border-slate-700/50">
+                  <span className="text-[10px] text-slate-400 block">Assigned Pharmacy</span>
+                  <span className="text-[11px] font-bold text-slate-200 mt-0.5 block truncate">Apollo #104</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 1: Virtual Medicine Cabinet */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                  <Pill className="w-3.5 h-3.5 text-cyan-600" />
+                  My Virtual Medicine Cabinet
+                </h4>
+                <button
+                  onClick={() => {
+                    setProfileToast('Scanning barcode to link new medication...');
+                    setTimeout(() => setCurrentStep('scan'), 400);
+                  }}
+                  className="text-[10px] text-cyan-600 font-semibold hover:underline cursor-pointer"
+                >
+                  + Add Rx Medication
+                </button>
+              </div>
+
+              {/* Medicine 1 */}
+              <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-900 text-xs">Atorvastatin 20mg</span>
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">
+                        Generic for Lipitor®
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      Mfg: Cipla USA • Dosage: 1 tablet daily with evening meal
+                    </p>
+                    <p className="text-[10px] text-amber-700 font-medium mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> 18 days supply remaining (Refill available)
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setProfileToast('Refill request sent to Apollo Care Pharmacy #104!');
+                      setTimeout(() => setProfileToast(null), 4000);
+                    }}
+                    className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-bold text-[10px] cursor-pointer shadow-2xs"
+                  >
+                    Request Refill
+                  </button>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[10px]">
+                  <span className="text-slate-500">Auto-Refill Schedule:</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoRefillAtorvastatin}
+                      onChange={(e) => {
+                        setAutoRefillAtorvastatin(e.target.checked);
+                        setProfileToast(
+                          e.target.checked
+                            ? 'Auto-refill enabled for Atorvastatin 20mg'
+                            : 'Auto-refill disabled for Atorvastatin 20mg'
+                        );
+                        setTimeout(() => setProfileToast(null), 3000);
+                      }}
+                      className="accent-cyan-600 w-3.5 h-3.5"
+                    />
+                    <span className="font-medium text-slate-700">Auto-Ship via Apollo Care</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Medicine 2 */}
+              <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-900 text-xs">Metformin 500mg ER</span>
+                      <span className="text-[9px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.2 rounded">
+                        Generic for Glucophage® XR
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      Mfg: Aurobindo • Dosage: 1 tablet BID with food
+                    </p>
+                    <p className="text-[10px] text-slate-600 font-medium mt-0.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400" /> 24 days supply remaining
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setProfileToast('Refill request sent to Apollo Care Pharmacy #104!');
+                      setTimeout(() => setProfileToast(null), 4000);
+                    }}
+                    className="px-2.5 py-1 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-[10px] cursor-pointer"
+                  >
+                    Refill
+                  </button>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-[10px]">
+                  <span className="text-slate-500">Auto-Refill Schedule:</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoRefillMetformin}
+                      onChange={(e) => {
+                        setAutoRefillMetformin(e.target.checked);
+                        setProfileToast(
+                          e.target.checked
+                            ? 'Auto-refill enabled for Metformin 500mg'
+                            : 'Auto-refill disabled for Metformin 500mg'
+                        );
+                        setTimeout(() => setProfileToast(null), 3000);
+                      }}
+                      className="accent-cyan-600 w-3.5 h-3.5"
+                    />
+                    <span className="font-medium text-slate-700">Auto-Ship via Apollo Care</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Health Insurance & Pre-Tax HSA Wallet */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+                Insurance &amp; Payment Wallet
+              </h4>
+
+              <div className="p-3 border border-slate-200 rounded-xl bg-white space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500">Primary Health Coverage:</span>
+                  <span className="font-bold text-slate-800">
+                    {currentUser?.insuranceProvider || 'BlueCross Anthem Select'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500">Member Rx Group / ID:</span>
+                  <span className="font-mono font-bold text-slate-700">
+                    {currentUser?.memberId || 'BC-99420-ALEX'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-100">
+                  <span className="text-slate-500">Pre-Tax HSA/FSA Balance:</span>
+                  <span className="font-mono font-bold text-emerald-700">
+                    ${(currentUser?.hsaFsaBalance || 840.5).toFixed(2)} Available
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Recent Order Dispatches */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-cyan-600" />
+                  Recent Dispense Orders
+                </h4>
+                <button
+                  onClick={onNavigateToPharmacy}
+                  className="text-[10px] text-cyan-600 font-semibold hover:underline cursor-pointer"
+                >
+                  View in Pharmacy Hub →
+                </button>
+              </div>
+
+              <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono font-bold text-slate-900 text-xs">#GEN-ORD-88219</span>
+                  <span className="text-[10px] px-2 py-0.2 rounded-full bg-cyan-100 text-cyan-800 font-bold">
+                    SwiftRx Courier En Route
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600">
+                  Apollo Care Pharmacy #104 • 2 items (Atorvastatin 20mg, Metformin 500mg)
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[10px]">
+                  <span className="text-slate-500">Escrow Value: $22.50</span>
+                  <span className="text-emerald-700 font-bold">ETA: ~12 mins</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Settings & Auth Actions */}
+            <div className="pt-2 border-t border-slate-200 space-y-2">
+              <button
+                onClick={() => {
+                  if (onOpenAuth) onOpenAuth();
+                  else alert('Unified Auth Screen is accessible from the top navigation bar.');
+                }}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-xs"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Switch Account / Sign In as Different Role</span>
+              </button>
+
+              <p className="text-[10px] text-center text-slate-400">
+                Data protected under HIPAA &amp; 21 CFR Part 11 regulations.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Mobile Bottom Navigation Bar */}
         <div className="bg-white border-t border-slate-200 px-6 py-2.5 flex items-center justify-between text-slate-500 text-[10px] font-medium">
           <button
@@ -606,7 +880,12 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
             <ShoppingBag className="w-4 h-4" />
             <span>Checkout</span>
           </button>
-          <button className="flex flex-col items-center gap-1 cursor-pointer">
+          <button
+            onClick={() => setCurrentStep('profile')}
+            className={`flex flex-col items-center gap-1 cursor-pointer ${
+              currentStep === 'profile' ? 'text-cyan-600 font-bold' : ''
+            }`}
+          >
             <User className="w-4 h-4" />
             <span>Profile</span>
           </button>

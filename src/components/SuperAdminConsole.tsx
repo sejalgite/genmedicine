@@ -228,20 +228,17 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
             {[
               { name: 'Command Center', badge: null, color: null },
               { name: 'Catalogue & Freshness', badge: 'SLA 98.6%', color: 'bg-slate-800 text-slate-300' },
-              { name: 'Partner Verification', badge: '3 Pending', color: 'bg-amber-950 text-amber-300 border border-amber-800/40' },
-              { name: 'Safety & Reviews', badge: '14 Flags', color: 'bg-rose-950 text-rose-300 border border-rose-800/40' },
               { name: 'Ranking & Trust Tuner (v2.4)', badge: null, color: null },
-              { name: 'Commission Ledger', badge: null, color: null, hideMobile: true },
-              { name: 'OpenTelemetry Tracing', badge: null, color: null, hideMobile: true },
+              { name: 'Audit & Security Logs', badge: `${auditEvents.length} Events`, color: 'bg-cyan-950 text-cyan-300 border border-cyan-800/40' },
             ].map((tab) => (
               <button
                 key={tab.name}
                 onClick={() => setActiveTab(tab.name)}
-                className={`px-3 py-1 rounded transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-xs ${
                   activeTab === tab.name
-                    ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-700/60 font-semibold shadow-sm'
+                    ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-700/60 font-semibold shadow-xs'
                     : 'hover:bg-slate-900 text-slate-400'
-                } ${tab.hideMobile ? 'hidden lg:inline-flex' : ''}`}
+                }`}
               >
                 <span>{tab.name}</span>
                 {tab.badge && (
@@ -270,8 +267,9 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
 
       {/* Main Workspace */}
       <main className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
-        {/* KPI Summary Section */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        {/* KPI Summary Section - Command Center */}
+        {activeTab === 'Command Center' && (
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
           {/* Metric 1 */}
           <div className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-lg p-3.5 transition flex flex-col justify-between shadow-sm">
             <div className="flex items-center justify-between text-slate-400 mb-1">
@@ -363,11 +361,13 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
             </div>
           </div>
         </section>
+        )}
 
-        {/* Workspace Split Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-          {/* Left / Center Major Panel (8 Cols on XL) */}
-          <section className="xl:col-span-8 bg-slate-900/90 border border-slate-800 rounded-lg overflow-hidden shadow-lg flex flex-col">
+        {/* Tab 2: Catalogue & Freshness OR Command Center (Streamlined) */}
+        {(activeTab === 'Catalogue & Freshness' || activeTab === 'Command Center') && (
+        <div className="space-y-4">
+          {/* Main Panel */}
+          <section className="bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-lg flex flex-col">
             {/* Table Control Toolbar */}
             <div className="p-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/50">
               <div className="flex items-center gap-2">
@@ -615,9 +615,12 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
               </div>
             </div>
           </section>
+        </div>
+        )}
 
-          {/* Right Operational Sidebars (4 Cols on XL) */}
-          <aside className="xl:col-span-4 space-y-4">
+        {/* Tab 3: Ranking & Trust Tuner (Dedicated Clean View) */}
+        {activeTab === 'Ranking & Trust Tuner (v2.4)' && (
+          <div className="max-w-4xl mx-auto space-y-4">
             {/* Widget 1: Ranking & Trust Weight Tuner */}
             <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-4 shadow-lg flex flex-col justify-between">
               <div>
@@ -755,29 +758,46 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        )}
 
+        {/* Tab 4: Audit & Security Logs (Dedicated Clean View) */}
+        {activeTab === 'Audit & Security Logs' && (
+          <div className="max-w-4xl mx-auto space-y-4">
             {/* Widget 2: Multi-Tenant Real-Time Security & Audit Stream */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-lg p-4 shadow-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-sm text-slate-100 flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-emerald-400" />
-                  Multi-Tenant Security &amp; Audit Log
-                </h3>
-                <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                  Live Feed
-                </span>
+            <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+                <div>
+                  <h3 className="font-semibold text-base text-slate-100 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-emerald-400" />
+                    Multi-Tenant Security &amp; Audit Log
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Immutable trace of tenant-scoped changes, regulatory triggers, and moderation overrides.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-xs text-emerald-400 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    Live Feed Active
+                  </span>
+                  <button
+                    onClick={() => alert('Audit stream exported to CSV format with SHA-256 signature.')}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer border border-slate-700"
+                    type="button"
+                  >
+                    Export Audit CSV
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <p className="text-[11px] text-slate-400 mb-3">
-                Immutable trace of tenant-scoped changes, regulatory triggers, and moderation overrides.
-              </p>
 
               {/* Audit Events Timeline List */}
-              <div className="space-y-2 font-mono text-[11px] max-h-56 overflow-y-auto pr-1">
+              <div className="space-y-2.5 font-mono text-xs max-h-[500px] overflow-y-auto pr-1">
                 {auditEvents.map((evt) => (
                   <div
                     key={evt.id}
-                    className={`p-2 rounded border transition ${
+                    className={`p-3 rounded-lg border transition ${
                       evt.type === 'MODERATION_FLAG'
                         ? 'bg-rose-950/20 border-rose-900/40 hover:border-rose-800/60'
                         : evt.type === 'STALENESS_GUARD'
@@ -785,7 +805,7 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
                         : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700'
                     }`}
                   >
-                    <div className="flex items-center justify-between text-slate-400 mb-0.5">
+                    <div className="flex items-center justify-between text-slate-400 mb-1">
                       <span
                         className={`font-semibold ${
                           evt.type === 'MODERATION_FLAG'
@@ -799,28 +819,21 @@ export const SuperAdminConsole: React.FC<SuperAdminConsoleProps> = ({
                       >
                         [{evt.time}] {evt.type}
                       </span>
-                      <span className="text-slate-500 text-[10px]">tenant: {evt.tenant}</span>
+                      <span className="text-slate-500 text-[11px]">tenant: {evt.tenant}</span>
                     </div>
-                    <div className="text-slate-200 text-[11px] font-sans">{evt.description}</div>
+                    <div className="text-slate-200 text-xs font-sans">{evt.description}</div>
                   </div>
                 ))}
               </div>
 
               {/* Bottom Audit Controls */}
-              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-slate-400">Cryptographically Chained</span>
-                <button
-                  onClick={() => alert('Audit stream exported to CSV format with SHA-256 signature.')}
-                  className="text-cyan-400 hover:text-cyan-300 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
-                  type="button"
-                >
-                  Export Audit CSV
-                  <ExternalLink className="w-3 h-3" />
-                </button>
+              <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <span className="font-mono">Cryptographically Chained • SHA-256 Verified Ledger</span>
+                <span className="text-emerald-400 font-medium">Synced with PostgreSQL Audit Logs</span>
               </div>
             </div>
-          </aside>
-        </div>
+          </div>
+        )}
       </main>
 
       {/* Global Operations Footer */}
