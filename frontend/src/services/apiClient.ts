@@ -21,10 +21,11 @@ import type {
   PushNotificationType,
   HardwareScanResult,
   EnterpriseScannerConfig,
+  DdiCheckResult,
+  TenantQueryResult,
+  TenantMigrationJob,
 } from '../types';
 import type { BatchAuditRecord } from '../data/batchData';
-import type { DdiCheckResult } from '../server/geminiService';
-import type { TenantQueryResult, TenantMigrationJob } from '../server/tenantDbService';
 import {
   initialMedicineOffers,
   initialDispenseOrders,

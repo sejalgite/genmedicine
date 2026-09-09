@@ -101,6 +101,12 @@ export interface FormulationDossier {
   rating: string;
   anda: string;
   regulatoryClearance: string;
+  dosageForm?: string;
+  innovatorBrand?: string;
+  innovatorMfg?: string;
+  bioequivalenceRating?: string;
+  wholesalePackPrice?: number;
+  retailDispensePrice?: number;
 }
 
 export interface DispenseOrder {
@@ -596,5 +602,39 @@ export interface RegulatoryComplianceCheck {
   importParityViable: boolean;
   notes: string;
 }
+export interface DdiCheckResult {
+  hasContraindication: boolean;
+  severeInteractionsCount: number;
+  overallRiskLevel: 'SAFE' | 'MODERATE' | 'CRITICAL';
+  interactions: {
+    id: string;
+    drugA: string;
+    drugB: string;
+    severity: 'High' | 'Moderate' | 'Minor';
+    mechanism: string;
+    clinicalEffect: string;
+    pharmacistRecommendation: string;
+  }[];
+  cyp450EnzymeConflicts: string[];
+  foodAlcoholWarnings: string[];
+}
 
+export interface TenantMigrationJob {
+  migrationId: string;
+  name: string;
+  appliedAt: string;
+  appliedSchemas: string[];
+  status: 'SUCCESS' | 'FAILED';
+  executionTimeMs: number;
+}
 
+export interface TenantQueryResult {
+  tenantId: string;
+  resolvedSearchPath: string;
+  executedSql: string;
+  rowCount: number;
+  rows: any[];
+  executionTimeMs: number;
+  rowLevelSecurityEnforced: boolean;
+  isolationGuarantee: string;
+}

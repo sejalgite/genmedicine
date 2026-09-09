@@ -129,7 +129,7 @@ export const ProductPortfolioView: React.FC<ProductPortfolioViewProps> = ({
                 <tr key={d.id} className="hover:bg-[#f8f9ff] transition">
                   <td className="py-3.5 px-4">
                     <div className="font-bold text-[#00334f]">{d.molecule}</div>
-                    <div className="text-[10px] text-[#72787f]">{d.dosageForm}</div>
+                    <div className="text-[10px] text-[#72787f]">{d.dosageForm || d.formulation}</div>
                   </td>
 
                   <td className="py-3.5 px-4 font-mono">
@@ -138,22 +138,22 @@ export const ProductPortfolioView: React.FC<ProductPortfolioViewProps> = ({
                   </td>
 
                   <td className="py-3.5 px-4 text-[#0b1c30]">
-                    <span className="font-medium">{d.innovatorBrand}</span>
-                    <div className="text-[10px] text-[#72787f]">({d.innovatorMfg})</div>
+                    <span className="font-medium">{d.innovatorBrand || d.rldReference}</span>
+                    <div className="text-[10px] text-[#72787f]">({d.innovatorMfg || 'Originator RLD'})</div>
                   </td>
 
                   <td className="py-3.5 px-4">
                     <span className="px-2 py-0.5 rounded bg-[#dce9ff] text-[#003825] font-mono font-bold text-xs">
-                      {d.bioequivalenceRating}
+                      {d.bioequivalenceRating || d.rating}
                     </span>
                   </td>
 
                   <td className="py-3.5 px-4 font-mono font-bold text-[#00334f]">
-                    ${d.wholesalePackPrice.toFixed(2)}
+                    ${((d.wholesalePackPrice ?? d.wholesalePrice) ?? 0).toFixed(2)}
                   </td>
 
                   <td className="py-3.5 px-4 font-mono font-bold text-[#005137]">
-                    ${d.retailDispensePrice.toFixed(2)}
+                    ${((d.retailDispensePrice ?? d.dispensePrice) ?? 0).toFixed(2)}
                   </td>
 
                   <td className="py-3.5 px-4 text-right">

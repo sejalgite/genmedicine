@@ -1,8 +1,31 @@
+# Dependencies
 node_modules/
-build/
+frontend/node_modules/
+backend/node_modules/
+
+# Production Builds
 dist/
+frontend/dist/
+backend/dist/
+build/
+
+# Testing & Coverage
 coverage/
+
+# OS and Logs
 .DS_Store
 *.log
-.env*
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+frontend/.env
+frontend/.env.local
+backend/.env
+backend/.env.local
+
+# Preserve environment examples
 !.env.example
+!frontend/.env.example
+!backend/.env.example
