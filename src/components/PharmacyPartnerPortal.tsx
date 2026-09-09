@@ -38,13 +38,17 @@ export const PharmacyPartnerPortal: React.FC<PharmacyPartnerPortalProps> = ({
   const [activeOrderId, setActiveOrderId] = useState<string>('ord-1');
   const [searchQueue, setSearchQueue] = useState('');
   const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  const [barcodeScanned1, setBarcodeScanned1] = useState(true);
-  const [barcodeScanned2, setBarcodeScanned2] = useState(true);
+  const [scannedBarcodes, setScannedBarcodes] = useState<Record<string, boolean>>({});
+  const [simulatedTemp, setSimulatedTemp] = useState<number>(4.2);
   const [tamperSealLocked, setTamperSealLocked] = useState(true);
   const [pharmacistSigned, setPharmacistSigned] = useState(true);
   const [actionSuccessNotice, setActionSuccessNotice] = useState<string | null>(null);
 
   const activeOrder = orders.find((o) => o.id === activeOrderId) || orders[0];
+  const allBarcodesScanned = activeOrder
+    ? activeOrder.items.every((item) => scannedBarcodes[item.barcode] !== false)
+    : true;
+  const isTempSafe = activeOrder && activeOrder.isColdChain ? simulatedTemp >= 2.0 && simulatedTemp <= 8.0 : true;
 
   const handleApprove = () => {
     if (!activeOrder) return;
@@ -310,9 +314,8 @@ export const PharmacyPartnerPortal: React.FC<PharmacyPartnerPortalProps> = ({
               </div>
 
               <div className="space-y-3">
-                {activeOrder.items.map((item, index) => {
-                  const isScanned = index === 0 ? barcodeScanned1 : barcodeScanned2;
-                  const setScanned = index === 0 ? setBarcodeScanned1 : setBarcodeScanned2;
+                {activeOrder.items.map((item) => {
+                  const isScanned = scannedBarcodes[item.barcode] ?? true;
 
                   return (
                     <div
@@ -344,7 +347,7 @@ export const PharmacyPartnerPortal: React.FC<PharmacyPartnerPortalProps> = ({
                           <div className="text-[10px] text-emerald-600 font-semibold">Consumer Saves ${item.savings.toFixed(2)}</div>
                         </div>
                         <button
-                          onClick={() => setScanned(!isScanned)}
+                          onClick={() => setScannedBarcodes((prev) => ({ ...prev, [item.barcode]: !isScanned }))}
                           className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer ${
                             isScanned
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -361,17 +364,80 @@ export const PharmacyPartnerPortal: React.FC<PharmacyPartnerPortalProps> = ({
               </div>
             </div>
 
-            {/* Packaging & Cold-Chain Sensor Verification */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
+            {/* Packaging & Cold-Chain IoT Sensor Verification */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Thermometer className="w-4 h-4 text-cyan-600" />
-                  <span className="text-xs font-bold text-slate-900">Packaging &amp; Cold-Chain Sensor Check</span>
+                  <span className="text-xs font-bold text-slate-900">IoT Packaging &amp; Cold-Chain Telemetry Verification</span>
                 </div>
-                <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200">
-                  Sensor: {activeOrder.packagingColdChain.tempRange}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-mono font-bold px-2.5 py-0.5 rounded border flex items-center gap-1.5 ${
+                    isTempSafe
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border-rose-300 animate-pulse'
+                  }`}>
+                    {isTempSafe ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                    <span>Sensor Tag {activeOrder.packagingColdChain.sensorTag}: {simulatedTemp.toFixed(1)}°C ({isTempSafe ? 'Safe 2°C-8°C' : 'CRITICAL BREACH'})</span>
+                  </span>
+                </div>
               </div>
+
+              {/* Temperature Simulation Controls */}
+              {activeOrder.isColdChain && (
+                <div className="p-3 bg-white border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-0.5">
+                    <span className="font-semibold text-slate-800 flex items-center gap-1">
+                      <span>Live IoT Sensor Probe Simulation:</span>
+                      <strong className={`font-mono ${isTempSafe ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {simulatedTemp.toFixed(1)}°C
+                      </strong>
+                    </span>
+                    <p className="text-[11px] text-slate-500">
+                      Standard cold-chain tolerance: 2.0°C – 8.0°C (USP &lt;1079&gt; Good Storage Practices).
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSimulatedTemp(4.2)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition ${
+                        simulatedTemp === 4.2
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      Safe (4.2°C)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSimulatedTemp(11.4)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition ${
+                        simulatedTemp === 11.4
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                      }`}
+                    >
+                      Simulate Breach (11.4°C)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Breach Warning Banner if Temperature Exceeded */}
+              {!isTempSafe && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 flex items-start gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div className="text-xs leading-relaxed">
+                    <strong className="font-bold">DISPATCH LOCK ENGAGED (FDA 21 CFR Part 11 / Cold-Chain Breach):</strong>
+                    <p className="text-[11px] text-rose-800 mt-0.5">
+                      Temperature sensor probe reports {simulatedTemp.toFixed(1)}°C, exceeding allowable upper limit (8.0°C). 
+                      Order release has been programmatically locked. Qualified Pharmacist must quarantine or recertify cold pack.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <label className="flex items-center gap-2.5 p-3 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition">
@@ -411,7 +477,7 @@ export const PharmacyPartnerPortal: React.FC<PharmacyPartnerPortalProps> = ({
               </div>
 
               <button
-                disabled={!barcodeScanned1 || !barcodeScanned2 || !tamperSealLocked || !pharmacistSigned}
+                disabled={!allBarcodesScanned || !tamperSealLocked || !pharmacistSigned || !isTempSafe}
                 onClick={handleApprove}
                 className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
               >

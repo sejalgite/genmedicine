@@ -10,6 +10,8 @@ import {
   Sparkles,
   User,
   LogIn,
+  Pill,
+  Globe,
 } from 'lucide-react';
 import { AppScreen, UserAccount } from '../types';
 
@@ -29,6 +31,14 @@ export const NavigationBanner: React.FC<NavigationBannerProps> = ({
   onOpenAuth,
 }) => {
   const screens = [
+    {
+      id: 'drug-directory' as AppScreen,
+      name: 'Generic Directory',
+      role: 'Discovery & Pricing',
+      badge: 'Phase 1 Core',
+      icon: Pill,
+      color: 'text-cyan-400',
+    },
     {
       id: 'super-admin' as AppScreen,
       name: 'Super Admin Console',
@@ -68,6 +78,30 @@ export const NavigationBanner: React.FC<NavigationBannerProps> = ({
       badge: '3 Step Flow',
       icon: Smartphone,
       color: 'text-purple-600',
+    },
+    {
+      id: 'phase-4-engine' as AppScreen,
+      name: 'Phase 4 AI & Data Tier',
+      role: 'Gemini AI & PostgreSQL 16',
+      badge: 'Live Engine',
+      icon: Sparkles,
+      color: 'text-cyan-400',
+    },
+    {
+      id: 'phase-5-mobile' as AppScreen,
+      name: 'Phase 5 Mobile & Health',
+      role: 'HealthKit & Hardware App',
+      badge: 'Native Suite',
+      icon: Smartphone,
+      color: 'text-purple-400',
+    },
+    {
+      id: 'phase-6-global' as AppScreen,
+      name: 'Phase 6 Global & Supply',
+      role: 'Trials, ZKP & Arbitrage',
+      badge: 'v5.0 Engine',
+      icon: Globe,
+      color: 'text-cyan-400',
     },
     {
       id: 'architecture' as AppScreen,

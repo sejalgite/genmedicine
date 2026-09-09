@@ -17,6 +17,10 @@ import { PharmacyPartnerPortal } from './components/PharmacyPartnerPortal';
 import { CustomerMobileApp } from './components/CustomerMobileApp';
 import { ArchitectureVisualizer } from './components/ArchitectureVisualizer';
 import { AuthScreen } from './components/AuthScreen';
+import { GenericDrugDirectory } from './components/GenericDrugDirectory';
+import { Phase4EngineDashboard } from './components/Phase4EngineDashboard';
+import { Phase5MobileHealthSuite } from './components/Phase5MobileHealthSuite';
+import { Phase6GlobalTrialsAndSupplyChain } from './components/Phase6GlobalTrialsAndSupplyChain';
 
 const DEFAULT_USER: UserAccount = {
   id: 'usr-customer-01',
@@ -47,9 +51,11 @@ export default function App() {
 
   // Cross-screen actions
   const handleApproveOrder = (orderId: string) => {
+    let approvedOrderNumber = '#GEN-ORD-88219';
     setDispenseOrders((prev) =>
       prev.map((ord) => {
         if (ord.id === orderId) {
+          approvedOrderNumber = ord.orderNumber;
           return {
             ...ord,
             status: 'Dispatched',
@@ -71,12 +77,68 @@ export default function App() {
       time: timeStr,
       type: 'RBAC_AUDIT',
       tenant: 'apollo_downtown_104',
-      description: `Order #GEN-ORD-88219 signed off by Dr. Michael Chen (PharmD). Escrow released & courier dispatched.`,
+      description: `Order ${approvedOrderNumber} signed off by Dr. Michael Chen (PharmD). Escrow released & courier dispatched.`,
     };
     setAuditEvents((prev) => [newEvent, ...prev]);
   };
 
   const handleOrderPlacedFromCustomer = (orderData: any) => {
+    const orderId = orderData.id || `ord-${Date.now()}`;
+    const orderNum = orderData.orderNumber || `#GEN-ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    const newOrder: DispenseOrder = {
+      id: orderId,
+      orderNumber: orderNum,
+      patientName: orderData.patientName || currentUser?.name || 'Alex Morgan',
+      patientAddress: orderData.patientAddress || currentUser?.address || '452 Broadway, Apt 4B, New York, NY 10013',
+      rxNumber: `#RX-${Math.floor(10000 + Math.random() * 90000)}-B`,
+      prescriber: 'Dr. Sarah Jenkins, MD',
+      prescriberNpi: '#1982348102',
+      timestamp: 'Today, Just now',
+      timeAgo: 'Just now',
+      slaMinutesRemaining: 45,
+      items: [
+        {
+          name: orderData.medicineName || 'Generic Atorvastatin 20mg',
+          genericSalt: 'Atorvastatin Calcium',
+          dosage: '20mg Oral Tab',
+          quantity: '30 Tabs',
+          barcode: `CP-ATC-${Math.floor(100 + Math.random() * 900)}`,
+          lotNumber: 'CP-2026-99A',
+          expiryDate: 'Exp 08/2029',
+          brandDisplaced: orderData.brandDisplaced || 'Pfizer Lipitor® 20mg',
+          price: 14.2,
+          savings: 28.3,
+        },
+      ],
+      packagingColdChain: {
+        sensorTag: `#S-${Math.floor(1000 + Math.random() * 9000)}-0K`,
+        tempRange: '2°C - 8°C Verified',
+        isLocked: true,
+        isVerified: true,
+      },
+      ddiCheck: {
+        status: 'Passed',
+        severeCount: 0,
+        pharmacistSignOff: 'Pending review',
+        hash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
+      },
+      courier: {
+        company: 'SwiftRx Medical Courier',
+        driverName: 'Marcus Vance',
+        driverPhone: '+1 (555) 019-2831',
+        vehicleType: 'Certified Cold Carrier',
+        etaMinutes: 14,
+        status: 'Scheduled',
+        isColdCarrier: true,
+      },
+      escrowValue: orderData.total || 15.2,
+      status: 'Sign-Off Required',
+      isColdChain: true,
+    };
+
+    setDispenseOrders((prev) => [newOrder, ...prev]);
+
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
     const newEvent: AuditEvent = {
@@ -84,7 +146,7 @@ export default function App() {
       time: timeStr,
       type: 'SCHEMA_SYNC',
       tenant: 'apollo_downtown_104',
-      description: `New customer Rx order #GEN-ORD-88219 (Alex Morgan) routed to Apollo Care #104 with $${orderData.total.toFixed(2)} escrow hold.`,
+      description: `New customer Rx order ${orderNum} (${newOrder.patientName}) routed to Apollo Care #104 with $${orderData.total.toFixed(2)} escrow hold.`,
     };
     setAuditEvents((prev) => [newEvent, ...prev]);
   };
@@ -150,6 +212,15 @@ export default function App() {
 
       {/* Screen Views */}
       <main className="flex-1 flex flex-col">
+        {currentScreen === 'drug-directory' && (
+          <GenericDrugDirectory
+            currentUser={currentUser}
+            onOrderPlaced={handleOrderPlacedFromCustomer}
+            onNavigateToMobileApp={() => setCurrentScreen('customer-mobile')}
+            onNavigateToPharmacy={() => setCurrentScreen('pharmacy-partner')}
+          />
+        )}
+
         {currentScreen === 'super-admin' && (
           <SuperAdminConsole
             offers={medicineOffers}
@@ -191,6 +262,12 @@ export default function App() {
             onOpenAuth={() => setShowAuthModal(true)}
           />
         )}
+
+        {currentScreen === 'phase-4-engine' && <Phase4EngineDashboard />}
+
+        {currentScreen === 'phase-5-mobile' && <Phase5MobileHealthSuite />}
+
+        {currentScreen === 'phase-6-global' && <Phase6GlobalTrialsAndSupplyChain />}
 
         {currentScreen === 'architecture' && <ArchitectureVisualizer />}
       </main>

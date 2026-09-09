@@ -22,8 +22,10 @@ import {
   Eye,
   Sliders,
   Lock,
+  Heart,
 } from 'lucide-react';
-import { MobileSubScreen, UserAccount } from '../types';
+import { MobileSubScreen, UserAccount, PrescriptionOcrResult } from '../types';
+import { apiClient } from '../services/apiClient';
 
 interface CustomerMobileAppProps {
   currentUser?: UserAccount | null;
@@ -49,6 +51,28 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
   const [profileToast, setProfileToast] = useState<string | null>(null);
   const [autoRefillAtorvastatin, setAutoRefillAtorvastatin] = useState(true);
   const [autoRefillMetformin, setAutoRefillMetformin] = useState(false);
+
+  // Phase 4 Live Gemini OCR State
+  const [ocrPreset, setOcrPreset] = useState<'cardio-jenkins' | 'diabetes-metformin' | 'antibiotic-azithromycin'>('cardio-jenkins');
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrData, setOcrData] = useState<PrescriptionOcrResult | null>(null);
+
+  const triggerScan = async (presetId: 'cardio-jenkins' | 'diabetes-metformin' | 'antibiotic-azithromycin') => {
+    setOcrPreset(presetId);
+    setOcrLoading(true);
+    try {
+      const res = await apiClient.performPrescriptionOcr(undefined, presetId);
+      setOcrData(res);
+    } catch (e) {
+      console.warn('OCR error:', e);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    triggerScan('cardio-jenkins');
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -325,51 +349,102 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
           </div>
         )}
 
-        {/* SUB-SCREEN 2: AI PRESCRIPTION SCANNER & VALIDATION (Matching Image 7) */}
+        {/* SUB-SCREEN 2: AI PRESCRIPTION SCANNER & VALIDATION (Phase 4 Gemini 2.0 Vision) */}
         {currentStep === 'scan' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
             <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <div>
-                <span className="text-[10px] uppercase font-bold text-cyan-600">Step 2 of 3</span>
-                <h3 className="text-sm font-bold text-slate-900">AI Document Scanner &amp; Validation</h3>
+                <span className="text-[10px] uppercase font-bold text-cyan-600">Step 2 of 3 • Phase 4 Live</span>
+                <h3 className="text-sm font-bold text-slate-900">Gemini 2.0 Multimodal OCR</h3>
               </div>
               <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono text-[10px] font-bold">
-                OCR 99.2% High Conf
+                {ocrData ? `OCR ${(ocrData.overallConfidence * 100).toFixed(1)}% Conf` : 'Scanning...'}
               </span>
             </div>
 
-            {/* Document Preview Canvas with Bounding Boxes */}
+            {/* Quick Sample Prescriptions / Upload Switcher */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">Select Sample Prescription Document:</span>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  onClick={() => triggerScan('cardio-jenkins')}
+                  className={`p-2 rounded-xl text-left border transition cursor-pointer text-[10px] ${
+                    ocrPreset === 'cardio-jenkins'
+                      ? 'bg-cyan-50 border-cyan-500 text-cyan-900 font-bold shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="font-bold block truncate">Cardiology</span>
+                  <span className="text-slate-500 text-[9px]">Atorvastatin + Met</span>
+                </button>
+
+                <button
+                  onClick={() => triggerScan('diabetes-metformin')}
+                  className={`p-2 rounded-xl text-left border transition cursor-pointer text-[10px] ${
+                    ocrPreset === 'diabetes-metformin'
+                      ? 'bg-cyan-50 border-cyan-500 text-cyan-900 font-bold shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="font-bold block truncate">Endocrine</span>
+                  <span className="text-slate-500 text-[9px]">Metformin ER</span>
+                </button>
+
+                <button
+                  onClick={() => triggerScan('antibiotic-azithromycin')}
+                  className={`p-2 rounded-xl text-left border transition cursor-pointer text-[10px] ${
+                    ocrPreset === 'antibiotic-azithromycin'
+                      ? 'bg-cyan-50 border-cyan-500 text-cyan-900 font-bold shadow-xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="font-bold block truncate">Urgent Care</span>
+                  <span className="text-slate-500 text-[9px]">Azithro Z-Pak</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Document Preview Canvas with Laser Animation */}
             <div className="relative bg-slate-100 border border-slate-300 rounded-xl p-3 overflow-hidden shadow-inner">
-              <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 space-y-2 font-mono text-[10px] text-slate-600">
+              {ocrLoading && (
+                <div className="absolute inset-0 bg-cyan-950/20 backdrop-blur-xs flex items-center justify-center z-20">
+                  <div className="flex items-center gap-2 bg-slate-900 text-cyan-300 px-3 py-1.5 rounded-full text-xs font-mono font-bold shadow-lg">
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                    <span>Gemini 2.0 Multimodal OCR Scanning...</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 space-y-2 font-mono text-[10px] text-slate-600 relative">
                 <div className="flex justify-between border-b pb-1 text-slate-400">
-                  <span>METROPOLITAN HEALTH CLINIC</span>
-                  <span>Rx #99420-B</span>
+                  <span className="font-bold text-slate-700">{ocrData?.prescriber.clinic || 'METROPOLITAN HEALTH CLINIC'}</span>
+                  <span>NPI: {ocrData?.prescriber.npi || '1982348102'}</span>
                 </div>
-                <div className="text-slate-800 font-sans">
-                  <strong>Patient:</strong> Alex Morgan • <strong>Date:</strong> Sep 08, 2026
-                </div>
-
-                {/* Bounding Box 1 */}
-                <div className="p-1.5 border-2 border-cyan-500 bg-cyan-500/10 rounded relative">
-                  <span className="absolute -top-2 right-1 bg-cyan-600 text-white text-[8px] px-1 rounded">
-                    OCR Conf 99.4%
-                  </span>
-                  <div className="font-bold text-slate-900">Lipitor (Atorvastatin) 20mg — Sig: 1 tab daily</div>
+                <div className="text-slate-800 font-sans flex justify-between">
+                  <div><strong>Patient:</strong> {ocrData?.patientNameSnippet || 'Alex Morgan'}</div>
+                  <div className="text-slate-500 text-[9px]">DEA: {ocrData?.prescriber.dea}</div>
                 </div>
 
-                {/* Bounding Box 2 */}
-                <div className="p-1.5 border-2 border-indigo-500 bg-indigo-500/10 rounded relative">
-                  <span className="absolute -top-2 right-1 bg-indigo-600 text-white text-[8px] px-1 rounded">
-                    OCR Conf 98.2%
-                  </span>
-                  <div className="font-bold text-slate-900">Glucophage XR (Metformin) 500mg — Sig: 1 tab BID</div>
-                </div>
+                {/* Bounding Box Highlights */}
+                {ocrData?.extractedMedications.map((med, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-1.5 border-2 rounded relative ${
+                      idx === 0 ? 'border-cyan-500 bg-cyan-500/10' : 'border-indigo-500 bg-indigo-500/10'
+                    }`}
+                  >
+                    <span className="absolute -top-2 right-1 bg-cyan-600 text-white text-[8px] px-1 rounded font-mono font-bold">
+                      OCR Conf {(med.confidenceScore * 100).toFixed(1)}%
+                    </span>
+                    <div className="font-bold text-slate-900">{med.brandName} ({med.genericName}) — Sig: {med.sigInstructions}</div>
+                  </div>
+                ))}
 
                 <div className="pt-2 flex justify-between items-center text-[9px] text-slate-400">
                   <span className="flex items-center gap-1 text-emerald-600 font-bold">
-                    <CheckCircle2 className="w-3 h-3" /> Dr. Sarah Jenkins Digital Signature Verified
+                    <CheckCircle2 className="w-3 h-3" /> {ocrData?.prescriber.name} Digital Signature Verified
                   </span>
-                  <span>Clinic Stamp Legible</span>
+                  <span className="text-cyan-700 font-mono">FDA Orange Book AB Match</span>
                 </div>
               </div>
             </div>
@@ -378,45 +453,25 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
             <div className="space-y-2">
               <h4 className="font-bold text-xs text-slate-800">Extracted Medications &amp; Substitution Engine:</h4>
 
-              {/* Drug 1 */}
-              <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-xs">1. Atorvastatin 20mg (30 Tabs)</span>
-                  <span className="font-mono font-bold text-cyan-800 text-xs">$14.20</span>
-                </div>
-                <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-cyan-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={substituteLipitor}
-                    onChange={(e) => setSubstituteLipitor(e.target.checked)}
-                    className="accent-cyan-600 w-4 h-4"
-                  />
-                  <div className="text-[11px]">
-                    <span className="font-bold text-cyan-800">Generic Cipla Substitution Recommended</span>
-                    <span className="text-slate-500 block">Replaces Pfizer Lipitor® (Save $28.30)</span>
+              {ocrData?.extractedMedications.map((med, idx) => (
+                <div key={idx} className="p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 text-xs">{idx + 1}. {med.genericName} ({med.quantityPrescribed} Qty)</span>
+                    <span className="font-mono font-bold text-cyan-800 text-xs">${med.estimatedGenericPrice.toFixed(2)}</span>
                   </div>
-                </label>
-              </div>
-
-              {/* Drug 2 */}
-              <div className="p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-xs">2. Metformin 500mg ER (60 Tabs)</span>
-                  <span className="font-mono font-bold text-cyan-800 text-xs">$4.80</span>
+                  <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-cyan-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked
+                      className="accent-cyan-600 w-4 h-4"
+                    />
+                    <div className="text-[11px]">
+                      <span className="font-bold text-cyan-800">FDA AB-Rated Generic Cipla Substitution</span>
+                      <span className="text-slate-500 block">Replaces {med.brandName} (Save ${ (med.estimatedBrandPrice - med.estimatedGenericPrice).toFixed(2) })</span>
+                    </div>
+                  </label>
                 </div>
-                <label className="flex items-center gap-2 p-2 bg-white rounded-lg border border-indigo-200 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={substituteMetformin}
-                    onChange={(e) => setSubstituteMetformin(e.target.checked)}
-                    className="accent-indigo-600 w-4 h-4"
-                  />
-                  <div className="text-[11px]">
-                    <span className="font-bold text-indigo-800">Generic Aurobindo Substitution Recommended</span>
-                    <span className="text-slate-500 block">Replaces Glucophage® XR (Save $6.70)</span>
-                  </div>
-                </label>
-              </div>
+              ))}
             </div>
 
             {/* Total Savings Callout */}
@@ -766,6 +821,44 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({
                     />
                     <span className="font-medium text-slate-700">Auto-Ship via Apollo Care</span>
                   </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 1.5: Apple HealthKit & Google Health Connect Sync */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5 text-rose-500" />
+                  Apple HealthKit &amp; Google Health Sync
+                </h4>
+                <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-mono font-bold">
+                  Active Link
+                </span>
+              </div>
+
+              <div className="p-3 border border-slate-200 rounded-xl bg-white space-y-2.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500">Connected PHR Source:</span>
+                  <strong className="text-slate-800">Apple HealthKit (Bi-Directional)</strong>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+                  <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 block text-[9px]">BP Vitals</span>
+                    <strong className="text-slate-800 font-mono">118/76</strong>
+                  </div>
+                  <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 block text-[9px]">Glucose CGM</span>
+                    <strong className="text-emerald-700 font-mono">96 mg/dL</strong>
+                  </div>
+                  <div className="p-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="text-slate-400 block text-[9px]">Adherence</span>
+                    <strong className="text-purple-700 font-mono">14 Days 🔥</strong>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px]">
+                  <span className="text-slate-500">Verified Drug Allergies:</span>
+                  <span className="text-rose-600 font-semibold font-mono">Penicillin, NSAIDs</span>
                 </div>
               </div>
             </div>
