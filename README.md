@@ -138,6 +138,7 @@ npm run build
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
 | `PORT` | `5000` | HTTP port for the Express server. |
+| `MONGODB_URI` | *(Atlas connection string)* | MongoDB connection URI (`mongodb+srv://.../genmedicine`). |
 | `GEMINI_API_KEY` | *(Optional)* | Google Gemini API key for live prescription OCR and DDI checks. |
 | `APP_URL` | `http://localhost:5000` | Base public URL of the backend service. |
 

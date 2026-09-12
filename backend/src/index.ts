@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createApiMiddleware } from './services/apiMiddleware';
+import { connectMongo, getMongoStats } from './db/mongo';
 
 // Load environment variables
 dotenv.config();
@@ -21,15 +22,26 @@ app.use(
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
-// Health check endpoint
-app.get('/api/health', (_req, res) => {
+// Health check endpoint with MongoDB status
+app.get('/api/health', async (_req, res) => {
+  const mongoStats = await getMongoStats();
   res.json({
     status: 'HEALTHY',
     service: 'genmedicine-backend',
     version: '1.0.0',
     port: PORT,
+    database: {
+      type: 'MongoDB Atlas',
+      ...mongoStats,
+    },
     timestamp: new Date().toISOString(),
   });
+});
+
+// Dedicated MongoDB cluster status endpoint
+app.get('/api/v1/db/mongo-status', async (_req, res) => {
+  const stats = await getMongoStats();
+  res.json(stats);
 });
 
 // Mount modular API middleware for /api/v1/* endpoints
@@ -43,13 +55,16 @@ app.use('/api', (_req, res) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`=======================================================`);
   console.log(`  GenMedicine Enterprise Backend Service`);
   console.log(`  Status: Running on http://localhost:${PORT}`);
   console.log(`  Health Check: http://localhost:${PORT}/api/health`);
   console.log(`  API Version:  http://localhost:${PORT}/api/v1`);
   console.log(`=======================================================`);
+
+  // Connect to MongoDB Atlas
+  await connectMongo();
 });
 
 export default app;
