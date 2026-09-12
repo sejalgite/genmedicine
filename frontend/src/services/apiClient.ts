@@ -1,53 +1,93 @@
-import { UserAccount, Medicine, Pharmacy, CustomerOrder, Complaint } from '../unifiedTypes';
+import { Medicine, Pharmacy, CustomerOrder, Complaint } from '../unifiedTypes';
 
-const API_BASE = 'http://localhost:5000/api/v1';
+const API_BASE = import.meta.env.VITE_APP_URL || 'http://localhost:5000/api/v1';
+
+// Internal helper for auth requests
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+  
+  const res = await fetch(`${API_BASE}${url}`, { ...options, headers });
+  const data = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(data.error || 'API Request Failed');
+  }
+  return data;
+};
 
 export const apiClient = {
   // Auth
   login: async (email: string) => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const data = await fetchWithAuth('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password: 'password' })
     });
-    return res.json();
+    // Save token to localStorage for subsequent requests
+    localStorage.setItem('token', data.token);
+    return data;
+  },
+
+  logout: () => {
+    localStorage.removeItem('token');
   },
 
   // Medicines
   getMedicines: async (): Promise<Medicine[]> => {
-    const res = await fetch(`${API_BASE}/medicines`);
-    const data = await res.json();
+    const data = await fetchWithAuth('/medicines');
     return data.medicines || [];
   },
 
-  // Pharmacies
+  searchMedicines: async (query: string): Promise<Medicine[]> => {
+    const data = await fetchWithAuth(`/medicines/search?q=${encodeURIComponent(query)}`);
+    return data.medicines || [];
+  },
+
+  // Pharmacies & Inventory
   getPharmacies: async (): Promise<Pharmacy[]> => {
-    const res = await fetch(`${API_BASE}/pharmacies`);
-    const data = await res.json();
+    const data = await fetchWithAuth('/pharmacies');
     return data.pharmacies || [];
   },
 
+  getNearbyPharmacies: async (lat: number, lng: number): Promise<Pharmacy[]> => {
+    const data = await fetchWithAuth(`/pharmacies/nearby?lat=${lat}&lng=${lng}`);
+    return data.pharmacies || [];
+  },
+
+  getInventoryForMedicine: async (medicineId: string): Promise<any[]> => {
+    const data = await fetchWithAuth(`/inventory?medicineId=${medicineId}`);
+    return data.inventory || [];
+  },
+
   // Orders
-  getCustomerOrders: async (): Promise<CustomerOrder[]> => {
-    const res = await fetch(`${API_BASE}/orders`);
-    const data = await res.json();
+  getOrders: async (): Promise<CustomerOrder[]> => {
+    const data = await fetchWithAuth('/orders');
     return data.orders || [];
   },
 
-  placeCustomerOrder: async (order: Partial<CustomerOrder>): Promise<CustomerOrder> => {
-    const res = await fetch(`${API_BASE}/orders`, {
+  placeOrder: async (order: Partial<CustomerOrder>): Promise<CustomerOrder> => {
+    const data = await fetchWithAuth('/orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(order)
     });
-    const data = await res.json();
+    return data.order;
+  },
+
+  updateOrderStatus: async (orderId: string, status: string): Promise<CustomerOrder> => {
+    const data = await fetchWithAuth(`/orders/${orderId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status })
+    });
     return data.order;
   },
 
   // Complaints
   getComplaints: async (): Promise<Complaint[]> => {
-    const res = await fetch(`${API_BASE}/complaints`);
-    const data = await res.json();
+    const data = await fetchWithAuth('/complaints');
     return data.complaints || [];
   }
 };

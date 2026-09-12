@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ShoppingBag, MapPin, Tag, User, Star, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { UserAccount, Medicine, CustomerOrder } from '../unifiedTypes';
+import { UserAccount, Medicine, CustomerOrder, Pharmacy } from '../unifiedTypes';
+import { apiClient } from '../services/apiClient';
 
 interface CustomerMobileAppProps {
   currentUser: UserAccount | null;
@@ -9,6 +10,56 @@ interface CustomerMobileAppProps {
 
 export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUser, onOpenAuth }) => {
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'orders' | 'profile'>('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Medicine[]>([]);
+  const [nearbyPharmacies, setNearbyPharmacies] = useState<Pharmacy[]>([]);
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadOrders();
+    }
+  }, [currentUser]);
+
+  const loadOrders = async () => {
+    try {
+      const data = await apiClient.getOrders();
+      setOrders(data);
+    } catch (err) {
+      console.error('Failed to load orders', err);
+    }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const results = await apiClient.searchMedicines(searchQuery);
+      setSearchResults(results);
+    } catch (err) {
+      console.error('Search failed', err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const findNearbyStores = async () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        try {
+          const pharmacies = await apiClient.getNearbyPharmacies(pos.coords.latitude, pos.coords.longitude);
+          setNearbyPharmacies(pharmacies);
+        } catch (err) {
+          console.error('Failed to find nearby pharmacies', err);
+        }
+      });
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -58,7 +109,10 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
                 <span className="font-bold text-slate-700 text-lg">My Orders</span>
               </button>
 
-              <button className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-3 hover:shadow-md transition-shadow active:bg-slate-50">
+              <button 
+                onClick={() => { findNearbyStores(); setActiveTab('search'); }}
+                className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-3 hover:shadow-md transition-shadow active:bg-slate-50"
+              >
                 <div className="bg-purple-100 p-4 rounded-full text-purple-600">
                   <MapPin className="w-8 h-8" />
                 </div>
@@ -86,22 +140,49 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
         {activeTab === 'search' && (
           <div className="p-4 flex flex-col h-full">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">Search Medicine</h2>
-            <div className="relative mb-6">
-              <input 
-                type="text" 
-                placeholder="Type medicine name here..."
-                className="w-full bg-white border-2 border-emerald-500 rounded-xl py-4 pl-12 pr-4 text-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 w-6 h-6" />
-            </div>
             
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                <Search className="w-10 h-10 text-slate-400" />
+            <form onSubmit={handleSearch} className="relative mb-6 flex gap-2">
+              <div className="relative flex-1">
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Type medicine name here..."
+                  className="w-full bg-white border-2 border-emerald-500 rounded-xl py-4 pl-12 pr-4 text-lg focus:outline-none focus:ring-4 focus:ring-emerald-500/20"
+                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 w-6 h-6" />
               </div>
-              <h3 className="text-xl font-bold text-slate-700">Find Affordable Alternatives</h3>
-              <p className="text-slate-500 mt-2 text-lg">Search for a brand name to find cheaper generic equivalents.</p>
-            </div>
+              <button 
+                type="submit" 
+                className="bg-emerald-600 text-white px-6 rounded-xl font-bold shadow-md hover:bg-emerald-700 disabled:opacity-50"
+                disabled={isSearching}
+              >
+                {isSearching ? '...' : 'Go'}
+              </button>
+            </form>
+            
+            {searchResults.length > 0 ? (
+              <div className="space-y-4">
+                {searchResults.map(med => (
+                  <div key={med.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800">{med.name}</h3>
+                      <p className="text-slate-500 text-sm">{med.composition}</p>
+                      <p className="text-emerald-600 font-bold mt-1">${med.price}</p>
+                    </div>
+                    <button className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold text-sm">Compare Stores</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+                <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                  <Search className="w-10 h-10 text-slate-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-700">Find Affordable Alternatives</h3>
+                <p className="text-slate-500 mt-2 text-lg">Search for a brand name to find cheaper generic equivalents.</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -109,26 +190,37 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
           <div className="p-4">
             <h2 className="text-2xl font-bold text-slate-800 mb-4">My Orders</h2>
             
-            <div className="bg-white border-2 border-slate-100 rounded-2xl p-5 mb-4">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-sm font-bold">COMPLETED</span>
-                  <p className="text-slate-500 text-sm mt-2">Ordered on 12 Sep 2026</p>
-                </div>
-                <span className="font-bold text-xl text-slate-800">$18.50</span>
+            {orders.length === 0 ? (
+              <div className="text-center mt-8">
+                <p className="text-slate-500 text-lg">You have no recent orders.</p>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-1">Atorvastatin 20mg</h3>
-              <p className="text-slate-600 mb-4 text-lg flex items-center gap-1">
-                <Store className="w-4 h-4" /> Apollo Care #104
-              </p>
-              <button className="w-full bg-emerald-50 text-emerald-700 font-bold py-3 rounded-xl text-lg hover:bg-emerald-100">
-                Order Again
-              </button>
-            </div>
-            
-            <div className="text-center mt-8">
-              <p className="text-slate-500 text-lg">You have no other recent orders.</p>
-            </div>
+            ) : (
+              orders.map(order => (
+                <div key={order.id} className="bg-white border-2 border-slate-100 rounded-2xl p-5 mb-4 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className={`px-3 py-1 rounded-lg text-sm font-bold ${
+                        order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-700' :
+                        order.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
+                        {order.status}
+                      </span>
+                      <p className="text-slate-500 text-sm mt-2">Order #{order.id?.substring(0,8)}</p>
+                    </div>
+                    <span className="font-bold text-xl text-slate-800">${order.totalAmount}</span>
+                  </div>
+                  
+                  {order.items.map((item: any, i: number) => (
+                    <h3 key={i} className="text-lg font-bold text-slate-800 mb-1">{item.quantity}x {item.medicineId?.name || 'Medicine'}</h3>
+                  ))}
+                  
+                  <p className="text-slate-600 mb-4 mt-2 flex items-center gap-1">
+                    <MapPin className="w-4 h-4" /> Pharmacy Store
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         )}
 
@@ -147,7 +239,10 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
             <div className="space-y-3">
               <button className="w-full bg-white p-5 text-left rounded-xl font-bold text-lg text-slate-700 shadow-sm border border-slate-100">Saved Addresses</button>
               <button className="w-full bg-white p-5 text-left rounded-xl font-bold text-lg text-slate-700 shadow-sm border border-slate-100">Help & Support</button>
-              <button onClick={() => window.location.reload()} className="w-full bg-red-50 p-5 text-left rounded-xl font-bold text-lg text-red-600 border border-red-100 mt-8">Log Out</button>
+              <button onClick={() => {
+                apiClient.logout();
+                window.location.reload();
+              }} className="w-full bg-red-50 p-5 text-left rounded-xl font-bold text-lg text-red-600 border border-red-100 mt-8">Log Out</button>
             </div>
           </div>
         )}

@@ -1,8 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Package, ShoppingCart, Users, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { apiClient } from '../services/apiClient';
+import { CustomerOrder, Medicine } from '../unifiedTypes';
 
 export const PharmacyPartnerPortal: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'orders' | 'inventory' | 'complaints'>('orders');
+  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [inventory, setInventory] = useState<any[]>([]);
+  
+  useEffect(() => {
+    loadData();
+  }, [activeTab]);
+
+  const loadData = async () => {
+    try {
+      if (activeTab === 'orders') {
+        const data = await apiClient.getOrders();
+        setOrders(data);
+      } else if (activeTab === 'inventory') {
+        // Technically needs a getPharmacyInventory endpoint
+        // Using getInventoryForMedicine as a fallback hack
+        const data = await apiClient.getInventoryForMedicine(''); 
+        setInventory(data);
+      }
+    } catch (err) {
+      console.error('Failed to load data', err);
+    }
+  };
+
+  const handleUpdateStatus = async (orderId: string, status: string) => {
+    try {
+      await apiClient.updateOrderStatus(orderId, status);
+      loadData(); // Refresh list
+    } catch (err) {
+      console.error('Failed to update status', err);
+    }
+  };
 
   return (
     <div className="flex-1 bg-slate-50 flex flex-col h-[calc(100vh-64px)] overflow-hidden">
@@ -42,7 +75,6 @@ export const PharmacyPartnerPortal: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
                     <th className="p-4 font-medium">Order ID</th>
-                    <th className="p-4 font-medium">Customer</th>
                     <th className="p-4 font-medium">Items</th>
                     <th className="p-4 font-medium">Total</th>
                     <th className="p-4 font-medium">Status</th>
@@ -50,18 +82,35 @@ export const PharmacyPartnerPortal: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-slate-100">
-                    <td className="p-4 font-medium text-slate-700">#ORD-9912</td>
-                    <td className="p-4 text-slate-600">Alex Customer</td>
-                    <td className="p-4 text-slate-600">1x Atorvastatin 20mg</td>
-                    <td className="p-4 font-medium text-emerald-600">$18.50</td>
-                    <td className="p-4">
-                      <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">PLACED</span>
-                    </td>
-                    <td className="p-4">
-                      <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700">Accept Order</button>
-                    </td>
-                  </tr>
+                  {orders.length === 0 ? (
+                    <tr><td colSpan={5} className="p-4 text-center text-slate-500">No recent orders</td></tr>
+                  ) : (
+                    orders.map(order => (
+                      <tr key={order.id} className="border-b border-slate-100">
+                        <td className="p-4 font-medium text-slate-700">#{order.id?.substring(0,8)}</td>
+                        <td className="p-4 text-slate-600">
+                          {order.items.map((i: any, idx) => (
+                            <div key={idx}>{i.quantity}x {i.medicineId?.name || 'Med'}</div>
+                          ))}
+                        </td>
+                        <td className="p-4 font-medium text-emerald-600">${order.totalAmount}</td>
+                        <td className="p-4">
+                          <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold">{order.status}</span>
+                        </td>
+                        <td className="p-4 flex gap-2">
+                          {order.status === 'PLACED' && (
+                            <>
+                              <button onClick={() => handleUpdateStatus(order.id!, 'ACCEPTED')} className="text-sm font-bold text-emerald-600 hover:text-emerald-700">Accept</button>
+                              <button onClick={() => handleUpdateStatus(order.id!, 'REJECTED')} className="text-sm font-bold text-red-600 hover:text-red-700">Reject</button>
+                            </>
+                          )}
+                          {order.status === 'ACCEPTED' && (
+                            <button onClick={() => handleUpdateStatus(order.id!, 'DELIVERED')} className="text-sm font-bold text-blue-600 hover:text-blue-700">Mark Delivered</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -82,24 +131,28 @@ export const PharmacyPartnerPortal: React.FC = () => {
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
                     <th className="p-4 font-medium">Medicine</th>
-                    <th className="p-4 font-medium">Manufacturer</th>
-                    <th className="p-4 font-medium">My Price</th>
+                    <th className="p-4 font-medium">Price</th>
                     <th className="p-4 font-medium">Stock</th>
                     <th className="p-4 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-slate-100">
-                    <td className="p-4 font-medium text-slate-700">Atorvastatin 20mg</td>
-                    <td className="p-4 text-slate-600">Cipla Global Therapeutics</td>
-                    <td className="p-4 font-medium text-emerald-600">$18.50</td>
-                    <td className="p-4">
-                      <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">100 available</span>
-                    </td>
-                    <td className="p-4">
-                      <button className="text-sm font-bold text-slate-600 hover:text-slate-800">Edit Price/Stock</button>
-                    </td>
-                  </tr>
+                  {inventory.length === 0 ? (
+                    <tr><td colSpan={4} className="p-4 text-center text-slate-500">No inventory listed</td></tr>
+                  ) : (
+                    inventory.map(inv => (
+                      <tr key={inv._id} className="border-b border-slate-100">
+                        <td className="p-4 font-medium text-slate-700">{inv.medicineId?.name}</td>
+                        <td className="p-4 font-medium text-emerald-600">${inv.price}</td>
+                        <td className="p-4">
+                          <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">{inv.stock} available</span>
+                        </td>
+                        <td className="p-4">
+                          <button className="text-sm font-bold text-slate-600 hover:text-slate-800">Edit</button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
