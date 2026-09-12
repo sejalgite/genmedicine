@@ -7,17 +7,12 @@ import { PharmacyPartnerPortal } from './components/PharmacyPartnerPortal';
 import { CustomerMobileApp } from './components/CustomerMobileApp';
 import { AuthScreen } from './components/AuthScreen';
 
-const DEFAULT_USER: UserAccount = {
-  id: 'usr-cust1',
-  email: 'alex@example.com',
-  name: 'Alex Customer',
-  role: 'customer',
-};
+const DEFAULT_USER: UserAccount | null = null;
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('customer-mobile');
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(DEFAULT_USER);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(!DEFAULT_USER);
 
   const handleLoginSuccess = (account: UserAccount) => {
     setCurrentUser(account);
