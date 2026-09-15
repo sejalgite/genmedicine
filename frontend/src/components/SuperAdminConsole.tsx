@@ -106,7 +106,7 @@ export const SuperAdminConsole: React.FC = () => {
                 </thead>
                 <tbody>
                   {pharmacies.map(p => (
-                    <tr key={p.id} className="border-b border-slate-700/50">
+                    <tr key={p.id || p._id} className="border-b border-slate-700/50">
                       <td className="p-4 font-medium text-white">{p.name}</td>
                       <td className="p-4">
                         <span className="bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded text-xs font-bold border border-emerald-900">{p.status || 'APPROVED'}</span>
@@ -133,7 +133,7 @@ export const SuperAdminConsole: React.FC = () => {
                 </thead>
                 <tbody>
                   {medicines.map(m => (
-                    <tr key={m.id} className="border-b border-slate-700/50">
+                    <tr key={m.id || m._id} className="border-b border-slate-700/50">
                       <td className="p-4 font-medium text-white">{m.name}</td>
                       <td className="p-4 text-slate-400">{m.composition}</td>
                     </tr>
@@ -152,7 +152,7 @@ export const SuperAdminConsole: React.FC = () => {
               <p className="text-slate-500">No complaints registered.</p>
             ) : (
               complaints.map(c => (
-                <div key={c.id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-2">
+                <div key={c.id || c._id} className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-2">
                   <p className="text-white font-bold">{c.description}</p>
                   <p className="text-slate-500 text-sm mt-1">Status: {c.status}</p>
                 </div>

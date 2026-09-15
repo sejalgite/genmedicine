@@ -228,6 +228,108 @@ router.get('/complaints', requireAuth, async (req: AuthRequest, res: Response): 
   }
 });
 
+// ---------------------------------------------------------
+// USERS (Admin only)
+// ---------------------------------------------------------
+router.get('/users', requireAuth, requireRole(['super_admin']), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const users = await User.find().select('-passwordHash');
+    res.json({ users });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+router.put('/users/:id/status', requireAuth, requireRole(['super_admin']), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
+});
+
+// ---------------------------------------------------------
+// MEDICINES EXTENDED
+// ---------------------------------------------------------
+router.get('/medicines/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const medicine = await Medicine.findById(req.params.id).populate('manufacturerId');
+    if (!medicine) {
+      res.status(404).json({ error: 'Medicine not found' });
+      return;
+    }
+    res.json({ medicine });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch medicine' });
+  }
+});
+
+// ---------------------------------------------------------
+// PHARMACIES EXTENDED
+// ---------------------------------------------------------
+router.get('/pharmacies/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const pharmacy = await Pharmacy.findById(req.params.id);
+    if (!pharmacy) {
+      res.status(404).json({ error: 'Pharmacy not found' });
+      return;
+    }
+    res.json({ pharmacy });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch pharmacy' });
+  }
+});
+
+// ---------------------------------------------------------
+// ORDERS EXTENDED
+// ---------------------------------------------------------
+router.post('/orders/b2b', requireAuth, requireRole(['pharmacy_partner']), async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const orderData = req.body;
+    // req.user.pharmacyId might be set. Assuming pharmacyId is passed or taken from user.
+    orderData.pharmacyId = req.user.pharmacyId || orderData.pharmacyId; 
+    orderData.type = 'B2B';
+    orderData.status = 'PLACED';
+
+    const order = new Order(orderData);
+    await order.save();
+    res.status(201).json({ order });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create B2B order' });
+  }
+});
+
+// ---------------------------------------------------------
+// COMPLAINTS EXTENDED
+// ---------------------------------------------------------
+router.post('/complaints', requireAuth, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const complaintData = req.body;
+    complaintData.reporterId = req.user.id;
+    complaintData.status = 'OPEN';
+    
+    const complaint = new Complaint(complaintData);
+    await complaint.save();
+    res.status(201).json({ complaint });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create complaint' });
+  }
+});
+
+router.patch('/complaints/:id', requireAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const complaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    res.json({ complaint });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update complaint' });
+  }
+});
+
 export function createApiMiddleware() {
   return router;
 }

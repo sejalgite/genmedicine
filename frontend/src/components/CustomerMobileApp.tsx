@@ -14,7 +14,9 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
   const [searchResults, setSearchResults] = useState<Medicine[]>([]);
   const [nearbyPharmacies, setNearbyPharmacies] = useState<Pharmacy[]>([]);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [medicineInventory, setMedicineInventory] = useState<any[]>([]);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -36,6 +38,7 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
     if (!searchQuery.trim()) return;
     
     setIsSearching(true);
+    setSelectedMedicine(null);
     try {
       const results = await apiClient.searchMedicines(searchQuery);
       setSearchResults(results);
@@ -43,6 +46,39 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
       console.error('Search failed', err);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const selectMedicine = async (med: Medicine) => {
+    setSelectedMedicine(med);
+    try {
+      const inventory = await apiClient.getInventoryForMedicine(med._id || med.id);
+      setMedicineInventory(inventory);
+    } catch (err) {
+      console.error('Failed to get inventory', err);
+    }
+  };
+
+  const handlePlaceOrder = async (inv: any, quantity: number) => {
+    try {
+      setIsPlacingOrder(true);
+      await apiClient.placeOrder({
+        pharmacyId: inv.pharmacyId._id,
+        items: [{
+          medicineId: inv.medicineId._id,
+          quantity: quantity,
+          price: inv.price
+        }],
+        totalAmount: inv.price * quantity
+      });
+      alert('Order placed successfully!');
+      setSelectedMedicine(null);
+      setActiveTab('orders');
+      loadOrders();
+    } catch (err) {
+      alert('Failed to place order');
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -161,16 +197,53 @@ export const CustomerMobileApp: React.FC<CustomerMobileAppProps> = ({ currentUse
               </button>
             </form>
             
-            {searchResults.length > 0 ? (
+            {selectedMedicine ? (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex-1 overflow-y-auto">
+                <button onClick={() => setSelectedMedicine(null)} className="text-emerald-600 font-bold mb-4">← Back to Search</button>
+                <h3 className="font-bold text-2xl text-slate-800">{selectedMedicine.name}</h3>
+                <p className="text-slate-500 mb-2">{selectedMedicine.composition}</p>
+                <div className="bg-slate-50 p-4 rounded-xl mb-6">
+                  <p className="text-sm text-slate-600"><strong>Category:</strong> {selectedMedicine.category}</p>
+                  <p className="text-sm text-slate-600 mt-1">{selectedMedicine.description}</p>
+                </div>
+                
+                <h4 className="font-bold text-lg text-slate-800 mb-3">Available at:</h4>
+                <div className="space-y-4">
+                  {medicineInventory.map(inv => (
+                    <div key={inv._id} className="border border-slate-200 p-4 rounded-xl flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-slate-800">{inv.pharmacyId?.name}</p>
+                        <p className="text-sm text-slate-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> {inv.pharmacyId?.address}</p>
+                        <p className="text-emerald-600 font-bold mt-1">${inv.price}</p>
+                        <p className="text-xs text-slate-500">Stock: {inv.stock}</p>
+                      </div>
+                      <button 
+                        onClick={() => handlePlaceOrder(inv, 1)} 
+                        disabled={isPlacingOrder || inv.stock < 1}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold disabled:opacity-50"
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  ))}
+                  {medicineInventory.length === 0 && <p className="text-slate-500">Not available at any nearby pharmacies.</p>}
+                </div>
+              </div>
+            ) : searchResults.length > 0 ? (
               <div className="space-y-4">
                 {searchResults.map(med => (
-                  <div key={med.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                  <div key={med.id || med._id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
                     <div>
                       <h3 className="font-bold text-lg text-slate-800">{med.name}</h3>
                       <p className="text-slate-500 text-sm">{med.composition}</p>
                       <p className="text-emerald-600 font-bold mt-1">${med.price}</p>
                     </div>
-                    <button className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold text-sm">Compare Stores</button>
+                    <button 
+                      onClick={() => selectMedicine(med)}
+                      className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-emerald-200"
+                    >
+                      Compare Stores
+                    </button>
                   </div>
                 ))}
               </div>
